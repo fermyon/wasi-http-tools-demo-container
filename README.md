@@ -1,6 +1,11 @@
 # Demo Docker Container for wasi-http
 
-This repository contains a Dockerfile, whcih creates a container to help demo wasi-http across Spin, Nginx Unit, and Wastime.
+This repository contains a Dockerfile, which creates a container to help demo wasi-http across
+[Spin](https://github.com/fermyon/spin), [NGINX Unit](https://unit.nginx.org/),
+and [Wastime](https://github.com/bytecodealliance/wasmtime).
+
+To build the container:
+`docker build -t fermyon/wasi-http-demo:latest .`
 
 To run the container:
 `docker run --rm --name wasi-http -it -p 3000:3000 fermyon/wasi-http-demo:latest`
@@ -17,7 +22,7 @@ Imaginary steps for now...
         - `wasmtime serve ./spin-rust/target/wasm32-wasi/release/spin_rust.wasm --addr 0.0.0.0:3000`
     2. Spin
         - `spin up -f ./spin-rust/spin.toml --listen 0.0.0.0:3000`
-    3. Unit
+    3. NGINX Unit
         - `unitd --no-daemon`
 3. Compose the middleware into the component
 4. Go back to 2 and redo
@@ -35,6 +40,6 @@ All the tools you need:
 
 ### Wasi-http component examples
 
-- https://github.com/fermyon/spin-fileserver/pull/43
+- https://github.com/fermyon/spin-fileserver
 - https://github.com/fermyon/http-auth-middleware
 
