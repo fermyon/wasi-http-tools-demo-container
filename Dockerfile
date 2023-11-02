@@ -1,12 +1,11 @@
 FROM debian:bullseye-slim
 
-# Pre-reqs
-RUN apt-get update
-RUN apt-get -y install curl git gcc xz-utils pkg-config libssl-dev vim tree
-
-
 # Build NGINX Unit wasi-http tech-preview from source. For more information see
 # https://github.com/nginx/unit
+
+RUN set -ex \
+    && apt-get update \
+    && apt-get install --no-install-recommends --no-install-suggests -y curl git gcc xz-utils vim tree pkg-config
 
 RUN set -ex \
     && savedAptMark="$(apt-mark showmanual)" \
@@ -94,29 +93,35 @@ RUN set -ex \
     && rm -f /requirements.apt \
     && ln -sf /dev/stdout /var/log/unit.log
 
-
-# Download wasi_snapshot_preview1.reactor.wasm to create a component
-RUN  curl -Lo wasi_snapshot_preview1.reactor.wasm https://github.com/bytecodealliance/wasmtime/releases/download/v14.0.4/wasi_snapshot_preview1.reactor.wasm
-
 # Install Spin
-RUN curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash -s -- -v v2.0.0-rc.1
-RUN mv ./spin /usr/local/bin/spin
+RUN set -ex \
+    && apt-get update \
+    && apt-get install --no-install-recommends --no-install-suggests -y curl git \
+    && curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash -s -- -v v2.0.0-rc.1 \
+    && mv ./spin /usr/local/bin/spin
 
-# Install Rust tools for development demo apps
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# Install Rust tools to build component
+RUN set -ex \
+    && apt-get update \
+    && apt-get install --no-install-recommends --no-install-suggests -y curl \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && $HOME/.cargo/bin/rustup target install wasm32-wasi
+
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN rustup target install wasm32-wasi
 
 # Install Wasmtime and component tooling
-RUN curl https://wasmtime.dev/install.sh -sSf | bash
-RUN cargo install --git https://github.com/bytecodealliance/cargo-component --locked cargo-component
-RUN cargo install wasm-tools
+RUN set -ex \
+    && apt-get update \
+    && apt-get install --no-install-recommends --no-install-suggests -y libssl-dev \
+    && curl https://wasmtime.dev/install.sh -sSf | bash \
+    && cargo install --git https://github.com/bytecodealliance/cargo-component --locked cargo-component \
+    && cargo install wasm-tools
 
-RUN spin new -t http-rust spin-rust -a
-RUN spin build -f ./spin-rust/spin.toml
-
-# Create a Wasm Component from spins `spin_rust.wasm`
-RUN wasm-tools component new /spin-rust/target/wasm32-wasi/release/spin_rust.wasm --adapt ./wasi_snapshot_preview1.reactor.wasm -o component.wasm
+# Create Spin app and build the component
+RUN set -ex \
+    && spin new -t http-rust spin-rust -a \
+    && printf "\n[package.metadata.component]\npackage = \"demo:example\"\n" >> ./spin-rust/Cargo.toml \
+    && cargo component build --manifest-path ./spin-rust/Cargo.toml --release
 
 # Create a NGINX Unit configuration so we can simply start it up! 
 COPY <<EOF /var/lib/unit/conf.json
@@ -130,7 +135,7 @@ COPY <<EOF /var/lib/unit/conf.json
     "applications": {
         "wasm": {
             "type": "wasm-wasi-http",
-            "component": "component.wasm"
+            "component": "./spin-rust/target/wasm32-wasi/release/spin_rust.wasm"
         }
     }
 }
