@@ -5,7 +5,7 @@ This repository contains a Dockerfile, which creates a container to help demo wa
 and [Wastime](https://github.com/bytecodealliance/wasmtime).
 
 To build the container:
-`docker build -t fermyon/wasi-http-demo:latest .`
+`docker build -t wasi-http-demo:latest .`
 
 1. Build the container: `docker build -t wasi-http-demo:latest .`
 2. To run the container: `docker run --rm --name wasi-http -it -p 3000:3000 wasi-http-demo:latest`
