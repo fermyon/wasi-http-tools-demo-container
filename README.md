@@ -10,7 +10,7 @@ To build the container:
 1. Build the container: `docker build -t wasi-http-demo:latest .`
 2. To run the container: `docker run --rm --name wasi-http -it -p 3000:3000 wasi-http-demo:latest`
     > Note: Any process inside the container should bind to the `0.0.0.0` ip-address. `127.0.0.1` will not work.
-3. Run the component across
+3. Run the component using any of the below
     1. Wasmtime
         - `wasmtime serve ./spin-rust/target/wasm32-wasi/release/spin_rust.wasm --addr 0.0.0.0:3000`
     2. Spin
